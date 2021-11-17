@@ -1,0 +1,438 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc"
+	xmlns:car-booking="http://www.mulesoft.org/schema/mule/car-booking"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:ftp="http://www.mulesoft.org/schema/mule/ftp" xmlns:indigo="http://www.mulesoft.org/schema/mule/indigo" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/indigo http://www.mulesoft.org/schema/mule/indigo/current/mule-indigo.xsd
+http://www.mulesoft.org/schema/mule/ftp http://www.mulesoft.org/schema/mule/ftp/current/mule-ftp.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/car-booking http://www.mulesoft.org/schema/mule/car-booking/current/mule-car-booking.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<flow name="getFlights" doc:id="ed0cfbce-ad1a-45c4-9a3b-c80c79056048" initialState="started">
+		<indigo:get-flights doc:name="Get flights" doc:id="05cfa191-b1cc-49c3-abe3-2e60ae2c482e" config-ref="Indigo_Config1" source="#[attributes.queryParams.source]" destination="#[attributes.queryParams.destination]" date="#[attributes.queryParams.date]" >
+		</indigo:get-flights>
+		<logger level="INFO" doc:name="Logger" doc:id="30be1d15-3a7b-4026-9765-d1335176e89a" />
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="Error on Get Flights" doc:id="12c69988-8b50-4f8a-b248-156de27761d1" type="INDIGO:BAD_REQUEST, INDIGO:FORBIDDEN, INDIGO:NOT_FOUND, INDIGO:UNAUTHORIZED">
+				<ee:transform doc:name="Transform Message" doc:id="b68177d1-66a1-410d-9013-72c1dc4a5c0a" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "Failed to connect Indigo getFlights API",
+	"description": error.description,
+	"type": error.errorType.asString
+	
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[500]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<logger level="ERROR" doc:name="Logger" doc:id="8b6b8b9b-a6f2-48f0-bc9e-0ba68daa54fe" message="error in getFlights connection #[error.description]"/>
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="8b51adcb-a28e-4ab1-aa23-50a6d9b4f849" type="ANY">
+				<ee:transform doc:name="Transform Message" doc:id="f8304fd0-863e-432f-8415-d009ac58d91e" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+
+	payload
+
+]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[500]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<logger level="ERROR" doc:name="Logger" doc:id="dfd6acdb-572a-4c6e-b71c-1e7bb0a258b2" message="Something went wrong in getFlights"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="bookFlight" doc:id="de4ea6eb-71aa-44dd-bf9f-09dabc14f191" initialState="started">
+		<indigo:create-flight-by-flightcode doc:name="bookFlights" doc:id="b0162ef2-4e1f-4a5e-9e82-da9104aebb23" config-ref="Indigo_Config1" flightcode="#[attributes.uriParams.flightcode]"/>
+		<logger level="INFO" doc:name="Logger" doc:id="afa83f45-a504-4a41-b2a7-d69c514be4e3" />
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propogate" doc:id="276523fd-8c8a-41e9-be8a-14bfa533657a" type="INDIGO:BAD_REQUEST, INDIGO:FORBIDDEN, INDIGO:NOT_FOUND, INDIGO:UNAUTHORIZED" >
+				<ee:transform doc:name="Transform Message" doc:id="4bcb4ec3-8fca-4345-842a-613545952461" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "Failed to connect Indigo bookFlights API",
+	"description": error.description,
+	"type": error.errorType.asString
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[500]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<logger level="ERROR" doc:name="Logger" doc:id="a5016d6f-2bde-4e67-8305-7ad198817953" message="Error in bookFlight #[error.description]"/>
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="91116da3-20e3-4bba-9167-e465badcc2a0" type="ANY">
+				<ee:transform doc:name="Transform Message" doc:id="acf973f0-7d47-4732-ab4e-2cf702d6ed8d" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload
+
+]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[500]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<logger level="ERROR" doc:name="Logger" doc:id="c63b14fd-5d18-4b2b-9510-d1297bd2f681" message="Something went wrong in bookFlight"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="cancelFlight" doc:id="7b24cb35-d80a-43e5-9bd2-e7ffa9b5951a" >
+		<indigo:update-flight-by-flightcode doc:name="Update flight by flightcode" doc:id="133ad11d-4cfe-4b22-b035-a1614442739e" config-ref="Indigo_Config1" flightcode="#[attributes.uriParams.flightcode]"/>
+		<logger level="INFO" doc:name="Logger" doc:id="d527d716-ada9-4f4f-92a6-146c16d98d1d" />
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propogate" doc:id="ba54949a-e958-4923-9d21-f1b7fcda3c84" type="INDIGO:BAD_REQUEST, INDIGO:FORBIDDEN, INDIGO:NOT_FOUND, INDIGO:UNAUTHORIZED" >
+				<ee:transform doc:name="Transform Message" doc:id="e1c1e341-b02e-4ed9-89e7-bebb9f13e873" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "Failed to connect Indigo cancelFlights API",
+	"description": error.description,
+	"type": error.errorType.asString
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[500]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<logger level="ERROR" doc:name="Logger" doc:id="4d6736e1-9145-44fb-bbe1-978ab8e72162" message="Error in cancelFlight #[error.description]" />
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="2f355480-62a1-4a92-a5a2-ea8da43c72aa" type="ANY" >
+				<ee:transform doc:name="Transform Message" doc:id="22d0ee34-b7d6-4b5a-93a4-6528a0b166bd" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload
+
+]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[500]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<logger level="ERROR" doc:name="Logger" doc:id="bd7266c2-86aa-4d7a-a536-e6f5bc6d49c5" message="Something went wrong in cancelFlight" />
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="getHotels" doc:id="ed2cdbdc-a222-4e3a-86f1-01f0aa6d0a50" >
+		<ee:transform doc:name="Transform Message" doc:id="e30a8841-5641-45ae-8c66-92168b76eec9" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns soap http://schemas.xmlsoap.org/soap/envelope
+ns ns0 http://tempuri.org/
+---
+//{
+//	ns0#GetHotels: {
+//		destination: vars.code
+//	}
+//}
+
+"GetHotels":{
+	location: attributes.queryParams.locality
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<wsc:consume doc:name="Consume" doc:id="806942d4-3785-4678-aeae-efafc362ad31" config-ref="Web_Service_Consumer_Config" operation="GetHotels"/>
+		<ee:transform doc:name="Transform Message" doc:id="c805cecd-c6bc-4fd8-baa9-0ae7b0362054" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json duplicateKeyAsArray=true
+---
+payload.body]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="1ad792ee-047e-405a-b371-7e66661619c9" />
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propogate" doc:id="d2bdd30e-df48-47eb-b743-ec6dac7b9ec5" type="WSC:BAD_REQUEST, WSC:BAD_RESPONSE, WSC:CANNOT_DISPATCH, WSC:CONNECTIVITY, WSC:SOAP_FAULT, WSC:TIMEOUT" >
+				<ee:transform doc:name="Transform Message" doc:id="fed7b4f4-1069-4144-bbb2-b7bfe724f40e" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "Failed to connect Taj getHotels API",
+	"description": error.description,
+	"type": error.errorType.asString
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[500]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<logger level="ERROR" doc:name="Logger" doc:id="dedee2c9-fd19-4ada-b331-1df890419bab" message="Error in getHotels #[error.description]" />
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="d78dfd07-b62d-42ba-a803-f5385920efc1" type="ANY" >
+				<ee:transform doc:name="Transform Message" doc:id="55d10d92-7d2b-4b13-8ffb-f6173c559c00" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload
+
+]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[500]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<logger level="ERROR" doc:name="Logger" doc:id="3e079fc4-f022-4a86-9eee-81e1338c2ac9" message="Something went wrong in cancelFlight" />
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="bookHotel" doc:id="c378f277-30a0-45ec-9178-21c94a886764" >
+		<ee:transform doc:name="Transform Message" doc:id="2f974b70-b9e7-45af-958e-926dbe3b22bf" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+---
+"BookHotel":{
+	hotelId: attributes.uriParams.hotelId
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<wsc:consume doc:name="Consume" doc:id="fb0605d8-eb45-485e-9a98-e88b39500318" config-ref="Web_Service_Consumer_Config" operation="BookHotel"/>
+		<ee:transform doc:name="Transform Message" doc:id="3bdc36ea-877a-4307-8667-910f4e81be35" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload.body]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="e7094ab2-9d02-46ea-8d74-fdb0e7431dbd" />
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propogate" doc:id="14d56ae5-5f2b-4e2d-ab64-f903b62a8355" type="WSC:BAD_REQUEST, WSC:BAD_RESPONSE, WSC:CANNOT_DISPATCH, WSC:CONNECTIVITY, WSC:INVALID_WSDL, WSC:SOAP_FAULT" >
+				<ee:transform doc:name="Transform Message" doc:id="db01b0f5-624d-4d7e-a1c5-0f8e4827249f" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "Failed to connect Taj bookHotels API",
+	"description": error.description,
+	"type": error.errorType.asString
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[500]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<logger level="ERROR" doc:name="Logger" doc:id="1223990e-53e3-4801-be9b-9fa1b9bdf2cf" message="Error in bookHotels #[error.description]" />
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="773e03d4-888a-4a77-9392-1f15fe3411fc" type="ANY" >
+				<ee:transform doc:name="Transform Message" doc:id="932ed87c-1f83-41f2-8954-31b8ab9059e1" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload
+
+]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[500]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<logger level="ERROR" doc:name="Logger" doc:id="58c21df0-7d55-47bf-8f4f-ccce754b48b1" message="Something went wrong in bookHotels" />
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="cancelHotel" doc:id="3c7c5d2e-20e1-42d9-9b57-7d3778a9e7d7" >
+		<ee:transform doc:name="XML for Request" doc:id="0a032f9f-8b1e-46cc-8d0a-a2e15db2b0c1">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/xml
+---
+"CancelHotel":{
+	hotelId: attributes.uriParams.hotelId
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<wsc:consume operation="CancelHotelBooking" doc:name="Consume" doc:id="a49d2a20-0d5a-437c-80d6-168890e8518a" config-ref="Web_Service_Consumer_Config"/>
+		<ee:transform doc:name="XML To JSON" doc:id="880908f7-cc27-4def-aad0-c21d69251ba4" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload.body]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="824870b0-21e9-497b-9916-ff267fec1699" />
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propogate" doc:id="2e932fb5-9aec-4d43-be92-e96ced2bbf5f" type="WSC:BAD_REQUEST, WSC:BAD_RESPONSE, WSC:CANNOT_DISPATCH, WSC:CONNECTIVITY, WSC:INVALID_WSDL, WSC:SOAP_FAULT" >
+				<ee:transform doc:name="Transform Message" doc:id="6d3ceeb3-9472-4225-b4eb-ac0e4ef06c0e" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "Failed to connect Taj cancelHotels API",
+	"description": error.description,
+	"type": error.errorType.asString
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[500]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<logger level="ERROR" doc:name="Logger" doc:id="7757fe09-082c-4de4-bc31-01fe0d34e6ee" message="Error in cancelHotels #[error.description]" />
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="df617704-3fc3-4977-ad48-d20d370635d4" type="ANY" >
+				<ee:transform doc:name="Transform Message" doc:id="c9e52700-3927-464a-bd26-8843f41c2c76" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload
+
+]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[500]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<logger level="ERROR" doc:name="Logger" doc:id="ca90df06-a5e3-4ebb-bc80-5784f174f049" message="Something went wrong in cancelHotels" />
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="getCars" doc:id="a6afffb4-cab2-43c0-ab1f-91272391bf34" >
+		<car-booking:get-cars doc:name="Get cars" doc:id="cbdfded7-7e13-4066-99d9-19eef1334d92" config-ref="CarBooking_Config" source="#[attributes.queryParams.source]" destination="#[attributes.queryParams.destination]" />
+		<logger level="INFO" doc:name="Logger" doc:id="f25d58a2-5f2f-4996-a11c-a600b32c8ba3" message="#[payload]"/>
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propogate" doc:id="e425c722-df78-477b-9415-e23325f24e24" type="CAR-BOOKING:BAD_REQUEST, CAR-BOOKING:CONNECTIVITY, CAR-BOOKING:FORBIDDEN, CAR-BOOKING:METHOD_NOT_ALLOWED, CAR-BOOKING:NOT_FOUND, CAR-BOOKING:SECURITY" >
+				<ee:transform doc:name="Transform Message" doc:id="9be723a6-ae30-4373-b719-b28ba54f42d9" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "Failed to connect getCars API",
+	"description": error.description,
+	"type": error.errorType.asString
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[500]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<logger level="ERROR" doc:name="Logger" doc:id="f69d613a-04be-45a6-93f1-e4ba69b5d5d1" message="Error in getCars #[error.description]" />
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="47802551-2e8d-445c-905e-5c4249932db1" type="ANY" >
+				<ee:transform doc:name="Transform Message" doc:id="a759d392-be9e-43e7-8836-a30edb9e134e" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload
+
+]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[500]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<logger level="ERROR" doc:name="Logger" doc:id="213ec35c-9b75-49f9-b746-0ee7ab8038d6" message="Something went wrong in getCars" />
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="bookCar" doc:id="2bb630a5-b29f-4777-98c9-32e9cc68b838" >
+		<car-booking:create-car-by-car-no doc:name="Create car by car no" doc:id="4b60e2a2-a3d0-4052-bc5e-506b7dd38384" config-ref="CarBooking_Config" car-no="#[attributes.uriParams.carNo]"/>
+		<logger level="INFO" doc:name="Logger" doc:id="f93c234d-a3a4-4e47-b176-64138fec2101" />
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propogate" doc:id="b651fb7a-015f-48ce-98da-0f778e0a05f0" type="CAR-BOOKING:BAD_REQUEST, CAR-BOOKING:CONNECTIVITY, CAR-BOOKING:FORBIDDEN, CAR-BOOKING:METHOD_NOT_ALLOWED, CAR-BOOKING:NOT_FOUND, CAR-BOOKING:SECURITY" >
+				<ee:transform doc:name="Transform Message" doc:id="4bcf2157-77e1-473d-80b0-25f2a73bc1b7" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "Failed to connect bookCars API",
+	"description": error.description,
+	"type": error.errorType.asString
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[500]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<logger level="ERROR" doc:name="Logger" doc:id="4e26c118-b724-4b24-9b98-eebc3415e525" message="Error in bookCars #[error.description]" />
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="8b54362e-1365-43cd-a93c-10fb586da856" type="ANY" >
+				<ee:transform doc:name="Transform Message" doc:id="19d1af5c-2472-4ce6-ba64-59dcdfd720df" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload
+
+]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[500]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<logger level="ERROR" doc:name="Logger" doc:id="1d12ef0f-ea65-41e9-98eb-bb06ab19a416" message="Something went wrong in bookCars" />
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="cancelCarBooking" doc:id="7e85b0ed-a2d9-4c7b-973f-a8003776a583" >
+		<car-booking:update-car-by-car-no doc:name="Update car by car no" doc:id="460583dd-6c8b-4efd-abf8-7ceb673855d5" config-ref="CarBooking_Config" car-no="#[attributes.uriParams.carNo]"/>
+		<logger level="INFO" doc:name="Logger" doc:id="2979bf8f-5469-4e99-abe9-83ee67edae3b" />
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propogate" doc:id="d6dc7d3a-b402-401c-9ee8-15a034cd79bb" type="CAR-BOOKING:BAD_REQUEST, CAR-BOOKING:CONNECTIVITY, CAR-BOOKING:FORBIDDEN, CAR-BOOKING:METHOD_NOT_ALLOWED, CAR-BOOKING:NOT_FOUND, CAR-BOOKING:SECURITY" >
+				<ee:transform doc:name="Transform Message" doc:id="c4048900-248e-4886-831b-c3e8142a6993" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "Failed to connect cancelCarBooking API",
+	"description": error.description,
+	"type": error.errorType.asString
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[500]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<logger level="ERROR" doc:name="Logger" doc:id="46d8598c-63b9-499d-9849-05fbea8f8ac1" message="Error in cancelCarBookng  #[error.description]" />
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="0024e4f6-b924-4f5e-b729-ee38cfce9854" type="ANY" >
+				<ee:transform doc:name="Transform Message" doc:id="dcb2fc71-3632-4ff0-9f5c-bff3b077356e" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload
+
+]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[500]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<logger level="ERROR" doc:name="Copy_of_Logger" doc:id="d9a10845-33f0-4086-80dd-b448fac5c85d" message="Something went wrong in cancelCarBooking" />
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+</mule>

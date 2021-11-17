@@ -1,0 +1,17 @@
+indigo:
+  host: "indigo-restapi-ms.us-e2.cloudhub.io"
+  port: "80"
+  protocol: "HTTP"
+  basePath: "/api"
+  
+carBooking:
+  host: "carbooking-batch39-ms.us-e2.cloudhub.io"
+  port: "80"
+  protocol: "HTTP"
+  basePath: "/api"
+  
+hotel:
+  wsdl: "http://hotel-booking-batch39-ms.us-e2.cloudhub.io/Hotels/HotelsSoap?wsdl"
+  service: "Hotels"
+  port: "HotelsSoap"
+  

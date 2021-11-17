@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:car-booking="http://www.mulesoft.org/schema/mule/car-booking" xmlns:indigo="http://www.mulesoft.org/schema/mule/indigo" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd
+http://www.mulesoft.org/schema/mule/indigo http://www.mulesoft.org/schema/mule/indigo/current/mule-indigo.xsd
+http://www.mulesoft.org/schema/mule/car-booking http://www.mulesoft.org/schema/mule/car-booking/current/mule-car-booking.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="35f273f8-85f3-4d95-bcbf-8974a44087ba" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<indigo:config name="Indigo_Config1" doc:name="Indigo Config" doc:id="ae428723-9ba4-499d-b572-e3df7947e24d" property_host="${indigo.host}" property_port="${indigo.port}" property_protocol="${indigo.protocol}" property_basePath="${indigo.basePath}" />
+	<configuration-properties doc:name="Configuration properties" doc:id="03989c8b-6849-4945-a7ad-eb454665fd61" file="config.yaml" />
+	<car-booking:config name="CarBooking_Config" doc:name="CarBooking Config" doc:id="a0f4762e-f1f9-4c7a-8042-8b6942e03bd3" property_host="${carBooking.host}" property_port="${carBooking.port}" property_protocol="${carBooking.protocol}" property_basePath="${carBooking.basePath}" />
+	<file:config name="File_Config" doc:name="File Config" doc:id="ea5d9c81-9692-46c9-aee5-c31a6404614a" >
+		<file:connection workingDir="${mule.home}/apps/carbooking-batch39-ms" />
+	</file:config>
+	<wsc:config name="Web_Service_Consumer_Config" doc:name="Web Service Consumer Config" doc:id="144792a6-3911-4e70-a3ae-7c1e30ad2da8" >
+		<wsc:connection wsdlLocation="${hotel.wsdl}" service="${hotel.service}" port="${hotel.port}" />
+	</wsc:config>
+	<configuration doc:name="Configuration" doc:id="f0339b95-459e-46ef-8723-8df4d3dd645c" defaultErrorHandler-ref="globalError_Handler" />
+	<error-handler name="globalError_Handler" doc:id="257ac037-61e5-47b5-a7df-8471b97721b1" >
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="efb1772a-acda-4336-98f8-7b7987d7c213" type="ANY">
+			<ee:transform doc:name="Transform Message" doc:id="3fd2b2d7-6db4-4236-a8f9-f576fa8aacd2" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+		</on-error-propagate>
+	</error-handler>
+</mule>
