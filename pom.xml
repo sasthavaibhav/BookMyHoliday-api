@@ -30,21 +30,21 @@
 				<artifactId>mule-maven-plugin</artifactId>
 				<version>${mule.maven.plugin.version}</version>
 				<extensions>true</extensions>
-					<configuration>
-							<cloudHubDeployment>
-								<uri>https://anypoint.mulesoft.com</uri>
-								<muleVersion>4.3.0</muleVersion>
-								<username>sharedBookMyHoliday</username>
-								<password>Apisero@123</password>
-								<environment>Sandbox</environment>
-								<applicationName>bookmyholiday-batch39-ms</applicationName>
-								<businessGroup>Apisero</businessGroup>
-								<workerType>Micro</workerType>
-								<workers>1</workers>
-								<objectStoreV2>true</objectStoreV2>
-							</cloudHubDeployment>
-							<classifier>mule-application</classifier>
-					</configuration>
+				<configuration>
+					<cloudHubDeployment>
+						<uri>https://anypoint.mulesoft.com</uri>
+						<muleVersion>4.3.0</muleVersion>
+						<username>sharedBookMyHoliday</username>
+						<password>Apisero@123</password>
+						<environment>Sandbox</environment>
+						<applicationName>bookmyholiday-batch39-ms</applicationName>
+						<businessGroup>Apisero</businessGroup>
+						<workerType>Micro</workerType>
+						<workers>1</workers>
+						<objectStoreV2>true</objectStoreV2>
+					</cloudHubDeployment>
+					<classifier>mule-application</classifier>
+				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>com.mulesoft.munit.tools</groupId>
